@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PIXELFORGE STUDIO — Ultimate</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080b12;color:#eaf0ff;font-family:Inter,Segoe UI,Arial,sans-serif;overflow:hidden}
+button,input,select{font:inherit}button{cursor:pointer;border:1px solid #29344b;background:#111827;color:#eaf0ff;border-radius:8px;padding:8px 11px}
+button:hover{background:#1a2437}.top{height:56px;display:flex;align-items:center;gap:10px;padding:8px 12px;background:#0d1220;border-bottom:1px solid #273149}
+.logo{font-weight:900;letter-spacing:.7px;margin-right:10px}.logo span{color:#73a7ff}.spacer{flex:1}.app{height:calc(100vh - 56px);display:grid;grid-template-columns:230px 1fr 290px}
+.left,.right{background:#0c111c;border-right:1px solid #273149;overflow:auto}.right{border-right:0;border-left:1px solid #273149}
+.panel{padding:12px;border-bottom:1px solid #202a3e}.title{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:#8190ad;margin-bottom:10px;font-weight:800}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:7px}.tools button.active{outline:2px solid #73a7ff;background:#17233b}
+.objects{display:grid;grid-template-columns:1fr 1fr;gap:7px}.objects button{font-size:12px}
+.sceneList button{width:100%;text-align:left;margin-bottom:6px}.sceneList button.active{background:#1c2b48;border-color:#73a7ff}
+.center{position:relative;background:#06080d;display:flex;flex-direction:column;min-width:0}
+.viewport{position:relative;flex:1;overflow:hidden;background:radial-gradient(circle at 50% 42%,#182239 0,#0a0e17 46%,#05070b 100%)}
+canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;left:12px;top:12px;padding:9px 11px;background:#090d16d9;border:1px solid #2c3851;border-radius:9px;font-size:12px;line-height:1.5}
+.bottom{height:180px;background:#0b101a;border-top:1px solid #273149;display:grid;grid-template-columns:1.1fr 1fr 1fr;overflow:auto}
+.bottom>div{padding:12px;border-right:1px solid #202a3e}.tabs{display:flex;gap:6px;margin-bottom:9px}.tab.active{background:#1c2b48;border-color:#73a7ff}
+.node{display:inline-block;padding:8px 10px;border:1px solid #3b4c6c;border-radius:7px;background:#131d30;margin:3px;font-size:11px}
+.row{display:flex;gap:7px;align-items:center;margin:7px 0}.row>*{min-width:0}.row label{width:72px;color:#8d9ab4;font-size:12px}.row input,.row select{flex:1;background:#080d16;color:#eef3ff;border:1px solid #29344b;border-radius:7px;padding:7px}
+.small{font-size:11px;color:#8996ae}.badge{font-size:10px;padding:3px 6px;border-radius:10px;background:#1a2740;color:#9fc0ff}
+.layer{display:flex;justify-content:space-between;gap:8px;padding:7px;border-bottom:1px solid #182237;font-size:12px}.layer.sel{background:#17243c}
+#gameOverlay{display:none;position:absolute;inset:0;background:#05070bd9;z-index:20;align-items:center;justify-content:center}
+.gameCard{width:min(560px,90%);background:#0d1422;border:1px solid #3a4d70;border-radius:16px;padding:24px;box-shadow:0 20px 70px #000}
+.gameCard h1{margin-top:0}.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mobile{display:none;position:absolute;bottom:16px;left:16px;right:16px;justify-content:space-between;pointer-events:none}.mobile button{pointer-events:auto;border-radius:50%;width:52px;height:52px}
+.toast{position:fixed;right:18px;bottom:18px;background:#121b2c;border:1px solid #3a4b6b;padding:10px 14px;border-radius:9px;display:none;z-index:50}
+@media(max-width:900px){.app{grid-template-columns:170px 1fr 220px}.bottom{height:150px}.left{font-size:12px}}
+@media(max-width:700px){.app{grid-template-columns:1fr}.left,.right,.bottom{display:none}.mobile{display:flex}.top button:not(#playBtn):not(#saveBtn){display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">PIXELFORGE <span>STUDIO</span></div>
+  <button id="newBtn">New</button><button id="saveBtn">Save</button><button id="loadBtn">Load</button>
+  <button id="importBtn">Import</button><button id="exportBtn">Export Game</button><button id="playBtn">▶ Playtest</button>
+  <div class="spacer"></div><span class="badge" id="status">Editor</span>
+</header>
+
+<div class="app">
+<aside class="left">
+  <div class="panel">
+    <div class="title">Tools</div>
+    <div class="tools">
+      <button class="tool active" data-tool="select">↖ Select</button><button class="tool" data-tool="move">✥ Move</button>
+      <button class="tool" data-tool="rotate">↻ Rotate</button><button class="tool" data-tool="scale">↗ Scale</button>
+      <button class="tool" data-tool="camera">◉ Camera</button><button id="gridBtn"># Grid</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="title">Create Object</div>
+    <div class="objects">
+      <button data-add="player">🧍 Player</button><button data-add="enemy">👾 Enemy</button>
+      <button data-add="cube">▣ Cube</button><button data-add="platform">▬ Platform</button>
+      <button data-add="wall">▥ Wall</button><button data-add="coin">● Coin</button>
+      <button data-add="gem">◆ Gem</button><button data-add="key">🔑 Key</button>
+      <button data-add="door">🚪 Door</button><button data-add="tree">🌲 Tree</button>
+      <button data-add="rock">● Rock</button><button data-add="light">☀ Light</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="title">Scenes</div>
+    <div id="sceneList" class="sceneList"></div>
+    <button id="addScene" style="width:100%">＋ New Scene</button>
+  </div>
+  <div class="panel">
+    <div class="title">Project</div>
+    <button id="settingsBtn" style="width:100%">⚙ Game Settings</button>
+    <button id="imageBtn" style="width:100%;margin-top:7px">🖼 Import Image</button>
+    <button id="audioBtn" style="width:100%;margin-top:7px">♫ Import Audio</button>
+    <input id="imageFile" type="file" accept="image/*" hidden>
+    <input id="audioFile" type="file" accept="audio/*" hidden>
+  </div>
+</aside>
+
+<main class="center">
+  <div class="viewport" id="viewport">
+    <canvas id="canvas"></canvas>
+    <div class="hud">
+      <b id="sceneTitle">Level 1</b><br>
+      Objects: <span id="objCount">0</span> · Selected: <span id="selectedName">None</span><br>
+      <span class="small">Drag objects • Mouse wheel zoom • Right-drag orbit • Delete removes</span>
+    </div>
+    <div id="gameOverlay">
+      <div class="gameCard">
+        <h1 id="gameTitle">PIXELFORGE GAME</h1>
+        <p id="gameMessage">Playtest mode</p>
+        <div class="controls">
+          <button onclick="startGame()">▶ Start</button><button onclick="stopGame()">■ Stop</button>
+          <button onclick="restartGame()">↻ Restart</button><button onclick="togglePause()">Ⅱ Pause</button>
+        </div>
+        <p class="small">Keyboard: WASD / Arrow keys to move, Space to jump, F to interact. This playtest uses your current scene.</p>
+      </div>
+    </div>
+    <div class="mobile"><button id="ml">←</button><button id="mj">↑</button><button id="mr">→</button><button id="mf">●</button></div>
+  </div>
+  <div class="bottom">
+    <div><div class="title">Visual Scripting</div>
+      <div class="tabs"><button class="tab active" data-tab="logic">Logic</button><button class="tab" data-tab="events">Events</button></div>
+      <div id="logicNodes">
+        <span class="node">WHEN Game Starts</span>→<span class="node">Set Player Spawn</span><br>
+        <span class="node">WHEN Collision</span>→<span class="node">Add Score +10</span>→<span class="node">Play Effect</span><br>
+        <span class="node">WHEN Enemy Sees Player</span>→<span class="node">Follow Target</span>
+      </div>
+    </div>
+    <div><div class="title">Animation Timeline</div>
+      <div style="height:80px;border:1px solid #253149;border-radius:8px;position:relative;background:repeating-linear-gradient(90deg,#0a0f18 0,#0a0f18 59px,#182237 60px)">
+        <div style="position:absolute;left:18%;top:24px;width:16px;height:16px;border-radius:50%;background:#78a8ff"></div>
+        <div style="position:absolute;left:54%;top:48px;width:16px;height:16px;border-radius:50%;background:#78a8ff"></div>
+        <div style="position:absolute;left:82%;top:24px;width:16px;height:16px;border-radius:50%;background:#78a8ff"></div>
+      </div>
+      <div class="small">Keyframes: position · rotation · scale</div>
+    </div>
+    <div><div class="title">Console</div><div id="console" class="small">PIXELFORGE ready. Create an object to begin.</div></div>
+  </div>
+</main>
+
+<aside class="right">
+  <div class="panel">
+    <div class="title">Inspector</div>
+    <div id="inspector"><div class="small">Select an object to edit its properties.</div></div>
+  </div>
+  <div class="panel">
+    <div class="title">Layers</div>
+    <div id="layers"></div>
+  </div>
+  <div class="panel">
+    <div class="title">Assets</div>
+    <div id="assets" class="small">No imported assets yet.</div>
+  </div>
+</aside>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const canvas=$("#canvas"),ctx=canvas.getContext("2d");
+let project={name:"My PixelForge Game",gravity:20,speed:7,jump:10,scenes:[{name:"Level 1",objects:[]}]};
+let scene=0,selected=null,tool="select",grid=true,zoom=1,cam={x:0,y:0,rot:0},drag=null,playing=false,paused=false,keys={};
+let assets=[];
+const colors={player:"#5ba7ff",enemy:"#ff687c",cube:"#8794aa",platform:"#65748f",wall:"#49566d",coin:"#ffd45a",gem:"#b879ff",key:"#78e0a8",door:"#d38b55",tree:"#5bc57a",rock:"#79818e",light:"#fff1a8"};
+function uid(){return Math.random().toString(36).slice(2,9)}
+function log(x){$("#console").textContent=x}
+function toast(x){let t=$("#toast");t.textContent=x;t.style.display="block";setTimeout(()=>t.style.display="none",1600)}
+function resize(){canvas.width=canvas.clientWidth*devicePixelRatio;canvas.height=canvas.clientHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw()}
+addEventListener("resize",resize);
+function current(){return project.scenes[scene]}
+function add(type){
+ const defs={player:[0,0,50,70],enemy:[220,0,48,64],cube:[-180,0,70,70],platform:[0,150,260,28],wall:[-280,50,35,220],coin:[100,-90,30,30],gem:[170,-80,34,34],key:[-100,-100,32,32],door:[300,70,55,100],tree:[-360,-30,70,150],rock:[360,80,80,45],light:[0,-230,40,40]};
+ let d=defs[type]||defs.cube,o={id:uid(),type,name:type[0].toUpperCase()+type.slice(1),x:d[0],y:d[1],z:0,w:d[2],h:d[3],rot:0,scale:1,color:colors[type]||"#9aa"};
+ current().objects.push(o);selected=o.id;renderUI();draw();log("Created "+o.name)
+}
+$$("[data-add]").forEach(b=>b.onclick=()=>add(b.dataset.add));
+function renderUI(){
+ $("#sceneTitle").textContent=current().name;$("#objCount").textContent=current().objects.length;
+ let o=current().objects.find(x=>x.id===selected);$("#selectedName").textContent=o?o.name:"None";
+ $("#sceneList").innerHTML=project.scenes.map((s,i)=>`<button class="${i===scene?'active':''}" onclick="selectScene(${i})">${i+1}. ${s.name}</button>`).join("");
+ $("#layers").innerHTML=current().objects.slice().reverse().map(o=>`<div class="layer ${o.id===selected?'sel':''}" onclick="selectObj('${o.id}')"><span>${icon(o.type)} ${o.name}</span><span class="small">${o.type}</span></div>`).join("")||'<div class="small">No objects.</div>';
+ inspector(o);
+}
+function icon(t){return ({player:"🧍",enemy:"👾",coin:"●",gem:"◆",key:"🔑",door:"🚪",tree:"🌲",light:"☀"})[t]||"▣"}
+function selectObj(id){selected=id;renderUI();draw()}
+function selectScene(i){scene=i;selected=null;renderUI();draw();log("Switched to "+current().name)}
+function inspector(o){
+ if(!o){$("#inspector").innerHTML='<div class="small">Select an object to edit its properties.</div>';return}
+ $("#inspector").innerHTML=`
+ <div class="row"><label>Name</label><input id="pname" value="${o.name}"></div>
+ <div class="row"><label>X</label><input id="px" type="number" value="${o.x}"></div>
+ <div class="row"><label>Y</label><input id="py" type="number" value="${o.y}"></div>
+ <div class="row"><label>Z</label><input id="pz" type="number" value="${o.z}"></div>
+ <div class="row"><label>Width</label><input id="pw" type="number" value="${o.w}"></div>
+ <div class="row"><label>Height</label><input id="ph" type="number" value="${o.h}"></div>
+ <div class="row"><label>Rotation</label><input id="pr" type="number" value="${o.rot}"></div>
+ <div class="row"><label>Scale</label><input id="ps" type="number" step=".1" value="${o.scale}"></div>
+ <div class="row"><label>Color</label><input id="pc" type="color" value="${o.color}"></div>
+ <button id="del" style="width:100%;margin-top:5px">Delete Object</button>`;
+ ["pname","px","py","pz","pw","ph","pr","ps","pc"].forEach(id=>$("#"+id).onchange=()=>{o.name=$("#pname").value;o.x=+$("#px").value;o.y=+$("#py").value;o.z=+$("#pz").value;o.w=+$("#pw").value;o.h=+$("#ph").value;o.rot=+$("#pr").value;o.scale=+$("#ps").value;o.color=$("#pc").value;renderUI();draw()});
+ $("#del").onclick=()=>{current().objects=current().objects.filter(x=>x.id!==o.id);selected=null;renderUI();draw();log("Object deleted")}
+}
+function projectToScreen(o){
+ const W=canvas.clientWidth,H=canvas.clientHeight;
+ return {x:W/2+(o.x-cam.x)*zoom,y:H/2+(o.y-cam.y)*zoom,w:o.w*o.scale*zoom,h:o.h*o.scale*zoom}
+}
+function draw(){
+ const W=canvas.clientWidth,H=canvas.clientHeight;ctx.clearRect(0,0,W,H);
+ ctx.save();ctx.translate(W/2,H/2);ctx.rotate(cam.rot);ctx.scale(zoom,zoom);ctx.translate(-cam.x,-cam.y);
+ if(grid){ctx.strokeStyle="#151d2d";ctx.lineWidth=1/zoom;let step=50;let left=cam.x-W/(2*zoom),right=cam.x+W/(2*zoom),top=cam.y-H/(2*zoom),bottom=cam.y+H/(2*zoom);
+  for(let x=Math.floor(left/step)*step;x<right;x+=step){ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke()}
+  for(let y=Math.floor(top/step)*step;y<bottom;y+=step){ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke()}
+ }
+ current().objects.forEach(o=>drawObj(o));
+ ctx.restore();
+}
+function drawObj(o){
+ ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.rot*Math.PI/180);let w=o.w*o.scale,h=o.h*o.scale;
+ if(o.type==="tree"){ctx.fillStyle="#67452e";ctx.fillRect(-10,0,20,h/2);ctx.fillStyle=o.color;ctx.beginPath();ctx.arc(0,-h/4,h*.38,0,7);ctx.fill()}
+ else if(o.type==="coin"||o.type==="gem"||o.type==="key"){ctx.fillStyle=o.color;ctx.beginPath();ctx.moveTo(0,-h/2);ctx.lineTo(w/2,0);ctx.lineTo(0,h/2);ctx.lineTo(-w/2,0);ctx.closePath();ctx.fill()}
+ else if(o.type==="light"){ctx.fillStyle=o.color;ctx.beginPath();ctx.arc(0,0,w/2,0,7);ctx.fill();ctx.strokeStyle="#fff";for(let i=0;i<8;i++){let a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*w*.7,Math.sin(a)*w*.7);ctx.lineTo(Math.cos(a)*w,Math.sin(a)*w);ctx.stroke()}}
+ else {ctx.fillStyle=o.color;ctx.globalAlpha=o.type==="player"||o.type==="enemy"?1:.82;ctx.fillRect(-w/2,-h/2,w,h);ctx.globalAlpha=1;ctx.strokeStyle="#dce6ff55";ctx.strokeRect(-w/2,-h/2,w,h)}
+ if(o.id===selected){ctx.strokeStyle="#7db0ff";ctx.lineWidth=3/zoom;ctx.setLineDash([7/zoom,5/zoom]);ctx.strokeRect(-w/2-5/zoom,-h/2-5/zoom,w+10/zoom,h+10/zoom);ctx.setLineDash([])}
+ ctx.restore()
+}
+function hit(mx,my){
+ const W=canvas.clientWidth,H=canvas.clientHeight;
+ for(let i=current().objects.length-1;i>=0;i--){let o=current().objects[i],s=projectToScreen(o);if(mx>s.x-s.w/2&&mx<s.x+s.w/2&&my>s.y-s.h/2&&my<s.y+s.h/2)return o}
+}
+canvas.addEventListener("pointerdown",e=>{
+ const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+ if(e.button===2){drag={orbit:true,ox:e.clientX,oy:e.clientY};return}
+ let o=hit(x,y);if(o){selected=o.id;drag={o,ox:x,oy:y,sx:o.x,sy:o.y};renderUI();draw()}else{selected=null;renderUI();draw()}
+});
+canvas.addEventListener("pointermove",e=>{if(!drag)return;const r=canvas.getBoundingClientRect();if(drag.orbit){cam.rot+=(e.clientX-drag.ox)*.004;drag.ox=e.clientX;draw();return}
+ let o=drag.o;let x=e.clientX-r.left,y=e.clientY-r.top;o.x=drag.sx+(x-drag.ox)/zoom;o.y=drag.sy+(y-drag.oy)/zoom;if(grid){o.x=Math.round(o.x/25)*25;o.y=Math.round(o.y/25)*25}draw();inspector(o)});
+canvas.addEventListener("pointerup",()=>drag=null);canvas.oncontextmenu=e=>e.preventDefault();
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoom=Math.max(.25,Math.min(3,zoom*(e.deltaY<0?1.1:.9)));draw()},{passive:false});
+$$(".tool").forEach(b=>b.onclick=()=>{$$(".tool").forEach(x=>x.classList.remove("active"));b.classList.add("active");tool=b.dataset.tool});
+$("#gridBtn").onclick=()=>{grid=!grid;$("#gridBtn").classList.toggle("active",grid);draw()};
+$("#addScene").onclick=()=>{project.scenes.push({name:"Level "+(project.scenes.length+1),objects:[]});scene=project.scenes.length-1;selected=null;renderUI();draw()};
+$("#newBtn").onclick=()=>{if(confirm("Start a new project?")){project={name:"My PixelForge Game",gravity:20,speed:7,jump:10,scenes:[{name:"Level 1",objects:[]}]};scene=0;selected=null;renderUI();draw();toast("New project created")}};
+$("#saveBtn").onclick=()=>{localStorage.setItem("pixelforge-ultimate",JSON.stringify(project));toast("Project saved in this browser");log("Saved project locally.")};
+$("#loadBtn").onclick=()=>{let x=localStorage.getItem("pixelforge-ultimate");if(!x)return toast("No saved project found");project=JSON.parse(x);scene=0;selected=null;renderUI();draw();toast("Project loaded")};
+$("#exportBtn").onclick=()=>{
+ const data=JSON.stringify(project).replace(/</g,"\\u003c");
+ const game=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${project.name}</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#07101b;color:white;font-family:Arial}canvas{width:100%;height:100%;display:block}#ui{position:fixed;top:12px;left:12px;background:#0009;padding:10px;border-radius:8px}</style></head><body><canvas id="c"></canvas><div id="ui">${project.name} — WASD / arrows • Space</div><script>const P=${data},c=document.getElementById('c'),x=c.getContext('2d');let k={},p={x:0,y:0,vy:0};addEventListener('keydown',e=>k[e.key.toLowerCase()]=1);addEventListener('keyup',e=>k[e.key.toLowerCase()]=0);function r(){c.width=innerWidth;c.height=innerHeight;let s=P.scenes[0];x.clearRect(0,0,c.width,c.height);x.fillStyle='#101a29';x.fillRect(0,0,c.width,c.height);x.save();x.translate(c.width/2,c.height/2);s.objects.forEach(o=>{x.save();x.translate(o.x,o.y);x.rotate(o.rot*Math.PI/180);x.fillStyle=o.color;x.fillRect(-o.w*o.scale/2,-o.h*o.scale/2,o.w*o.scale,o.h*o.scale);x.restore()});x.fillStyle='#65aaff';x.fillRect(p.x-20,p.y-35,40,70);x.restore();if(k['a']||k['arrowleft'])p.x-=P.speed*.1;if(k['d']||k['arrowright'])p.x+=P.speed*.1;if((k['w']||k['arrowup']||k[' '])&&p.y>100)p.vy=-P.jump*.5;p.vy+=P.gravity*.01;p.y+=p.vy;if(p.y>150){p.y=150;p.vy=0}requestAnimationFrame(r)}r();</script></body></html>`;
+ const blob=new Blob([game],{type:"text/html"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(project.name||"pixelforge-game").replace(/[^a-z0-9]+/gi,"-")+".html";a.click();toast("Standalone game exported");
+};
+$("#settingsBtn").onclick=()=>{let n=prompt("Game name:",project.name);if(n!==null)project.name=n;let g=prompt("Gravity:",project.gravity);if(g!==null)project.gravity=+g||20;let sp=prompt("Player speed:",project.speed);if(sp!==null)project.speed=+sp||7;renderUI()};
+$("#imageBtn").onclick=()=>$("#imageFile").click();$("#audioBtn").onclick=()=>$("#audioFile").click();
+$("#imageFile").onchange=e=>{let f=e.target.files[0];if(!f)return;assets.push("🖼 "+f.name);$("#assets").innerHTML=assets.join("<br>");toast("Image imported");log("Imported image asset: "+f.name)};
+$("#audioFile").onchange=e=>{let f=e.target.files[0];if(!f)return;assets.push("♫ "+f.name);$("#assets").innerHTML=assets.join("<br>");toast("Audio imported");log("Imported audio asset: "+f.name)};
+$("#importBtn").onclick=()=>{let i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=()=>{let f=i.files[0],r=new FileReader();r.onload=()=>{try{project=JSON.parse(r.result);scene=0;selected=null;renderUI();draw();toast("Project imported")}catch{toast("Invalid project file")}};r.readAsText(f)};i.click()};
+addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=1;if(e.key==="Delete"&&selected){current().objects=current().objects.filter(o=>o.id!==selected);selected=null;renderUI();draw()}});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=0);
+function startGame(){playing=true;paused=false;$("#gameOverlay").style.display="none";$("#status").textContent="Playtest";log("Playtest started.")}
+function stopGame(){playing=false;$("#gameOverlay").style.display="flex";$("#status").textContent="Editor";log("Playtest stopped.")}
+function restartGame(){startGame();toast("Playtest restarted")}
+function togglePause(){paused=!paused;toast(paused?"Paused":"Resumed")}
+$("#playBtn").onclick=()=>{if(playing)stopGame();else startGame()};
+function playLoop(){if(playing&&!paused){let p=current().objects.find(o=>o.type==="player");if(p){if(keys.a||keys.arrowleft)p.x-=project.speed*.3;if(keys.d||keys.arrowright)p.x+=project.speed*.3;if((keys.w||keys.arrowup||keys[" "])&&p.y>50)p.y-=project.jump*.2;}}draw();requestAnimationFrame(playLoop)}
+renderUI();resize();playLoop();
+</script>
+</body>
+</html>
