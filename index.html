@@ -80,7 +80,102 @@ function addScene(){p.scenes.push({name:'Level '+(p.scenes.length+1),objects:[]}
 function saveProject(){localStorage.setItem('pixelpro',JSON.stringify(p));pop('Saved in browser');log('Project saved locally.')}function loadProject(){let x=localStorage.getItem('pixelpro');if(!x)return pop('No saved project');p=JSON.parse(x);si=0;selected=null;render();draw();pop('Project loaded')}
 function download(name,text,type='application/json'){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
 function exportProject(){download((p.name||'pixelforge-project').replace(/[^a-z0-9]+/gi,'-')+'.json',JSON.stringify(p,null,2))}
-function exportGame(){let data=JSON.stringify(p).replace(/</g,'\\u003c');let g=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${p.name}</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#07101a;color:white;font:14px Arial}canvas{width:100%;height:100%}#ui{position:fixed;top:10px;left:10px;background:#0009;padding:9px;border-radius:8px}</style></head><body><canvas id="c"></canvas><div id="ui">${p.name}<br>WASD / arrows to move • Space to jump</div><script>const P=${data},c=document.getElementById('c'),x=c.getContext('2d');let k={},q={x:0,y:100,vy:0};onkeydown=e=>k[e.key.toLowerCase()]=1;onkeyup=e=>k[e.key.toLowerCase()]=0;function r(){c.width=innerWidth;c.height=innerHeight;x.fillStyle='#0b1320';x.fillRect(0,0,c.width,c.height);let s=P.scenes[0];x.save();x.translate(c.width/2,c.height/2);s.objects.forEach(o=>{x.save();x.translate(o.x,o.y);x.rotate(o.rot*Math.PI/180);x.fillStyle=o.color;x.fillRect(-o.w*o.scale/2,-o.h*o.scale/2,o.w*o.scale,o.h*o.scale);x.restore()});x.fillStyle='#63aaff';x.fillRect(q.x-20,q.y-35,40,70);x.restore();if(k.a||k.arrowleft)q.x-=P.speed*.25;if(k.d||k.arrowright)q.x+=P.speed*.25;if((k.w||k.arrowup||k[' '])&&q.y>=100)q.vy=-P.jump*.45;q.vy+=P.gravity*.01;q.y+=q.vy;if(q.y>100){q.y=100;q.vy=0}requestAnimationFrame(r)}r();<\\/script></body></html>`;download((p.name||'pixelforge-game').replace(/[^a-z0-9]+/gi,'-')+'.html',g,'text/html');pop('Game exported')}
+function exportGame(){let data=JSON.stringify(p).replace(/</g,'\\u003c');let g=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${p.name}</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#07101a;color:white;font:14px Arial}canvas{width:100%;height:100%}#ui{position:fixed;top:10px;left:10px;background:#0009;padding:9px;border-radius:8px}</style></head><body><canvas id="c"></canvas><div id="ui">${p.name}<br>WASD / arrows to move • Space to jump</div><script>const P=${data},c=document.getElementById('c'),x=c.getContext('2d');let k={},q={x:0,y:100,vy:0};onkeydown=e=>k[e.key.toLowerCase()]=1;onkeyup=e=>k[e.key.toLowerCase()]=0;function r(){c.width=innerWidth;c.height=innerHeight;x.fillStyle='#0b1320';x.fillRect(0,0,c.width,c.height);let s=P.scenes[0];x.save();x.translate(c.width/2,c.height/2);s.objects.forEach(o=>{x.save();x.translate(o.x,o.y);x.rotate(o.rot*Math.PI/180);x.fillStyle=o.color;x.fillRect(-o.w*o.scale/2,-o.h*o.scale/2,o.w*o.scale,o.h*o.scale);x.restore()});x.fillStyle='#63aaff';x.fillRect(q.x-20,q.y-35,40,70);x.restore();if(k.a||k.arrowleft)q.x-=P.speed*.25;if(k.d||k.arrowright)q.x+=P.speed*.25;if((k.w||k.arrowup||k[' '])&&q.y>=100)q.vy=-P.jump*.45;q.vy+=P.gravity*.01;q.y+=q.vy;if(q.y>100){q.y=100;q.vy=0}requestAnimationFrame(r)}r();<\\/script>
+<script>
+/* PIXELFORGE GAME ENGINE UPGRADE */
+(function(){
+  const oldPlay=window.playGame;
+  window.playGame=function(){
+    game.running=true; game.scene=sceneIndex; buildGame(); $('playOverlay').classList.add('show');
+    $('gameMessage').classList.remove('show'); setStatus('GAME ENGINE: RUNNING');
+    if(!game._raf) game._raf=requestAnimationFrame(loop);
+  };
+  window.buildGame=function(){
+    const w=$('gameWorld'); w.querySelectorAll('.gameObj').forEach(e=>e.remove());
+    const s=scenes[game.scene]||scenes[0];
+    const po=s.objects.find(o=>o.type==='player')||{x:60,y:250,w:42,h:60};
+    game.player={x:po.x,y:po.y,w:28,h:42,vx:0,vy:0,ground:false};
+    game.health=100; game.score=0; game.keys=0; game.checkpoint={x:po.x,y:po.y};
+    game.enemies=s.objects.filter(o=>o.type==='enemy').map(o=>({...o,dir:1,baseX:o.x}));
+    game.platforms=s.objects.filter(o=>['platform','wall','cube'].includes(o.type));
+    game.items=s.objects.filter(o=>['coin','gem','key'].includes(o.type)).map(o=>({...o,taken:false}));
+    game.door=s.objects.find(o=>o.type==='door')||null;
+    game.checkpoints=s.objects.filter(o=>o.type==='checkpoint');
+    game.running=true; game.last=performance.now(); drawGame();
+  };
+  window.update=function(){
+    if(!game.running)return;
+    const p=game.player, now=performance.now(), dt=Math.min(2,(now-game.last)/16.67); game.last=now;
+    const left=game.pressed.ArrowLeft||game.pressed.a, right=game.pressed.ArrowRight||game.pressed.d;
+    if(left)p.vx-=.55*dt; if(right)p.vx+=.55*dt; if(!left&&!right)p.vx*=Math.pow(.82,dt);
+    p.vx=Math.max(-5.5,Math.min(5.5,p.vx)); p.vy+=.52*dt;
+    if((game.pressed.w||game.pressed.ArrowUp||game.pressed[' '])&&p.ground){p.vy=-10.5;p.ground=false}
+    p.x+=p.vx*dt;
+    game.platforms.forEach(o=>{if(rects(p,o)){if(p.vx>0)p.x=o.x-p.w;else if(p.vx<0)p.x=o.x+o.w;p.vx=0}});
+    p.y+=p.vy*dt; p.ground=false;
+    game.platforms.forEach(o=>{if(rects(p,o)){if(p.vy>0){p.y=o.y-p.h;p.vy=0;p.ground=true}else if(p.vy<0){p.y=o.y+o.h;p.vy=0}}});
+    if(p.y>520){damage(25);respawn()}
+    game.enemies.forEach(e=>{
+      e.x+=e.dir*1.15*dt;
+      if(Math.abs(e.x-e.baseX)>90)e.dir*=-1;
+      if(rects(p,e)){damage(.7*dt);p.vx+=(p.x<e.x?-2.5:2.5)}
+    });
+    game.items.forEach(i=>{
+      if(!i.taken&&rects(p,i)){
+        i.taken=true;
+        if(i.type==='coin')game.score+=10;
+        if(i.type==='gem')game.score+=25;
+        if(i.type==='key')game.keys++;
+      }
+    });
+    game.checkpoints.forEach(c=>{if(rects(p,c))game.checkpoint={x:c.x,y:c.y-50}});
+    if(game.door&&rects(p,game.door)){
+      if(game.keys>0){game.keys--;win();}
+      else p.x-=p.vx*2;
+    }
+    p.x=Math.max(0,Math.min(870,p.x));
+    if(game.health<=0)lose();
+    drawGame();
+  };
+  function damage(n){game.health=Math.max(0,game.health-n)}
+  function respawn(){game.player.x=game.checkpoint.x;game.player.y=game.checkpoint.y;game.player.vx=0;game.player.vy=0}
+  window.loop=function(){game._raf=null;update();if(game.running)game._raf=requestAnimationFrame(loop)}
+  window.win=function(){game.running=false;showMessage('🏆 LEVEL COMPLETE','Score: '+game.score+'  •  You found the exit!')}
+  window.lose=function(){game.running=false;showMessage('💥 GAME OVER','Score: '+game.score+'  •  Press Play Again to restart.')}
+  window.restartGame=function(){buildGame();if(!game._raf)game._raf=requestAnimationFrame(loop)}
+  window.stopGame=function(){game.running=false;if(game._raf)cancelAnimationFrame(game._raf);game._raf=null;$('playOverlay').classList.remove('show');setStatus('Editor mode')}
+  window.drawGame=function(){
+    const w=$('gameWorld'); w.querySelectorAll('.gameObj').forEach(e=>e.remove());
+    const p=game.player;
+    makeG('gPlayer',p.x,p.y,28,42);
+    game.platforms.forEach(o=>makeG('gPlatform',o.x,o.y,o.w,o.h));
+    game.enemies.forEach(o=>makeG('gEnemy',o.x,o.y,o.w||28,o.h||38));
+    game.items.filter(i=>!i.taken).forEach(o=>makeG(o.type==='coin'?'gCoin':o.type==='gem'?'gGem':'gKey',o.x,o.y,o.w,o.h));
+    if(game.door)makeG('gDoor',game.door.x,game.door.y,game.door.w,game.door.h);
+    game.checkpoints.forEach(c=>makeG('gKey',c.x,c.y,20,45));
+    $('hudStats').innerHTML='❤️ '+Math.round(game.health)+' &nbsp; ⭐ '+game.score+' &nbsp; 🔑 '+game.keys;
+  };
+  window.keydown=function(e){
+    game.pressed[e.key]=true;
+    if(e.key==='Escape'&&game.running)stopGame();
+    if(e.key.toLowerCase()==='r'&&game.running)restartGame();
+  };
+  window.keyup=function(e){delete game.pressed[e.key]};
+  window.addEventListener('keydown',keydown); window.addEventListener('keyup',keyup);
+  window.addObj=(function(original){
+    return function(type){
+      original(type);
+      if(type==='checkpoint'){
+        const o=scenes[sceneIndex].objects[scenes[sceneIndex].objects.length-1];
+        o.w=22;o.h=55;o.color='#54d68c';o.name='Checkpoint';
+        render();
+      }
+    }
+  })(window.addObj);
+})();
+</script>
+
+</body></html>`;download((p.name||'pixelforge-game').replace(/[^a-z0-9]+/gi,'-')+'.html',g,'text/html');pop('Game exported')}
 function openSettings(){show(`<h2>Game Settings</h2><div class="row"><label>Name</label><input id="mn" value="${p.name}"></div><div class="row"><label>Gravity</label><input id="mg" type="number" value="${p.gravity}"></div><div class="row"><label>Speed</label><input id="ms" type="number" value="${p.speed}"></div><div class="row"><label>Jump</label><input id="mj" type="number" value="${p.jump}"></div><button onclick="applySettings()">Save Settings</button> <button onclick="closeModal()">Cancel</button>`)}
 function applySettings(){p.name=$('mn').value;p.gravity=+$('mg').value||20;p.speed=+$('ms').value||7;p.jump=+$('mj').value||10;closeModal();render();pop('Settings saved')}
 function openHelp(){show(`<h2>PIXELFORGE PRO</h2><p><b>Editor:</b> click an object to select it, drag to move, mouse wheel to zoom, right-drag to orbit.</p><p><b>Playtest:</b> WASD / arrow keys move the player. Space jumps. F is available for interactions in the game logic design.</p><p><b>Workflow:</b> add objects → arrange level → save → playtest → export your game.</p><button onclick="closeModal()">Close</button>`)}
@@ -90,4 +185,99 @@ addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if(e.key==='Delete')d
 function loop(){if(playing&&!paused){let o=cur().objects.find(x=>x.type==='player');if(o){if(keys.a||keys.arrowleft)o.x-=p.speed*.3;if(keys.d||keys.arrowright)o.x+=p.speed*.3;if((keys.w||keys.arrowup||keys[' '])&&o.y>40)o.y-=p.jump*.2;draw()}}requestAnimationFrame(loop)}
 $('img').onchange=e=>{let f=e.target.files[0];if(f){assets.push('🖼 '+f.name);$('assetList').innerHTML=assets.map(x=>'<div class="asset">'+x+'</div>').join('');pop('Image imported')}};$('aud').onchange=e=>{let f=e.target.files[0];if(f){assets.push('♫ '+f.name);$('assetList').innerHTML=assets.map(x=>'<div class="asset">'+x+'</div>').join('');pop('Audio imported')}};function pickImage(){$('img').click()}function pickAudio(){$('aud').click()}
 render();resize();loop();
-</script></body></html>
+</script>
+<script>
+/* PIXELFORGE GAME ENGINE UPGRADE */
+(function(){
+  const oldPlay=window.playGame;
+  window.playGame=function(){
+    game.running=true; game.scene=sceneIndex; buildGame(); $('playOverlay').classList.add('show');
+    $('gameMessage').classList.remove('show'); setStatus('GAME ENGINE: RUNNING');
+    if(!game._raf) game._raf=requestAnimationFrame(loop);
+  };
+  window.buildGame=function(){
+    const w=$('gameWorld'); w.querySelectorAll('.gameObj').forEach(e=>e.remove());
+    const s=scenes[game.scene]||scenes[0];
+    const po=s.objects.find(o=>o.type==='player')||{x:60,y:250,w:42,h:60};
+    game.player={x:po.x,y:po.y,w:28,h:42,vx:0,vy:0,ground:false};
+    game.health=100; game.score=0; game.keys=0; game.checkpoint={x:po.x,y:po.y};
+    game.enemies=s.objects.filter(o=>o.type==='enemy').map(o=>({...o,dir:1,baseX:o.x}));
+    game.platforms=s.objects.filter(o=>['platform','wall','cube'].includes(o.type));
+    game.items=s.objects.filter(o=>['coin','gem','key'].includes(o.type)).map(o=>({...o,taken:false}));
+    game.door=s.objects.find(o=>o.type==='door')||null;
+    game.checkpoints=s.objects.filter(o=>o.type==='checkpoint');
+    game.running=true; game.last=performance.now(); drawGame();
+  };
+  window.update=function(){
+    if(!game.running)return;
+    const p=game.player, now=performance.now(), dt=Math.min(2,(now-game.last)/16.67); game.last=now;
+    const left=game.pressed.ArrowLeft||game.pressed.a, right=game.pressed.ArrowRight||game.pressed.d;
+    if(left)p.vx-=.55*dt; if(right)p.vx+=.55*dt; if(!left&&!right)p.vx*=Math.pow(.82,dt);
+    p.vx=Math.max(-5.5,Math.min(5.5,p.vx)); p.vy+=.52*dt;
+    if((game.pressed.w||game.pressed.ArrowUp||game.pressed[' '])&&p.ground){p.vy=-10.5;p.ground=false}
+    p.x+=p.vx*dt;
+    game.platforms.forEach(o=>{if(rects(p,o)){if(p.vx>0)p.x=o.x-p.w;else if(p.vx<0)p.x=o.x+o.w;p.vx=0}});
+    p.y+=p.vy*dt; p.ground=false;
+    game.platforms.forEach(o=>{if(rects(p,o)){if(p.vy>0){p.y=o.y-p.h;p.vy=0;p.ground=true}else if(p.vy<0){p.y=o.y+o.h;p.vy=0}}});
+    if(p.y>520){damage(25);respawn()}
+    game.enemies.forEach(e=>{
+      e.x+=e.dir*1.15*dt;
+      if(Math.abs(e.x-e.baseX)>90)e.dir*=-1;
+      if(rects(p,e)){damage(.7*dt);p.vx+=(p.x<e.x?-2.5:2.5)}
+    });
+    game.items.forEach(i=>{
+      if(!i.taken&&rects(p,i)){
+        i.taken=true;
+        if(i.type==='coin')game.score+=10;
+        if(i.type==='gem')game.score+=25;
+        if(i.type==='key')game.keys++;
+      }
+    });
+    game.checkpoints.forEach(c=>{if(rects(p,c))game.checkpoint={x:c.x,y:c.y-50}});
+    if(game.door&&rects(p,game.door)){
+      if(game.keys>0){game.keys--;win();}
+      else p.x-=p.vx*2;
+    }
+    p.x=Math.max(0,Math.min(870,p.x));
+    if(game.health<=0)lose();
+    drawGame();
+  };
+  function damage(n){game.health=Math.max(0,game.health-n)}
+  function respawn(){game.player.x=game.checkpoint.x;game.player.y=game.checkpoint.y;game.player.vx=0;game.player.vy=0}
+  window.loop=function(){game._raf=null;update();if(game.running)game._raf=requestAnimationFrame(loop)}
+  window.win=function(){game.running=false;showMessage('🏆 LEVEL COMPLETE','Score: '+game.score+'  •  You found the exit!')}
+  window.lose=function(){game.running=false;showMessage('💥 GAME OVER','Score: '+game.score+'  •  Press Play Again to restart.')}
+  window.restartGame=function(){buildGame();if(!game._raf)game._raf=requestAnimationFrame(loop)}
+  window.stopGame=function(){game.running=false;if(game._raf)cancelAnimationFrame(game._raf);game._raf=null;$('playOverlay').classList.remove('show');setStatus('Editor mode')}
+  window.drawGame=function(){
+    const w=$('gameWorld'); w.querySelectorAll('.gameObj').forEach(e=>e.remove());
+    const p=game.player;
+    makeG('gPlayer',p.x,p.y,28,42);
+    game.platforms.forEach(o=>makeG('gPlatform',o.x,o.y,o.w,o.h));
+    game.enemies.forEach(o=>makeG('gEnemy',o.x,o.y,o.w||28,o.h||38));
+    game.items.filter(i=>!i.taken).forEach(o=>makeG(o.type==='coin'?'gCoin':o.type==='gem'?'gGem':'gKey',o.x,o.y,o.w,o.h));
+    if(game.door)makeG('gDoor',game.door.x,game.door.y,game.door.w,game.door.h);
+    game.checkpoints.forEach(c=>makeG('gKey',c.x,c.y,20,45));
+    $('hudStats').innerHTML='❤️ '+Math.round(game.health)+' &nbsp; ⭐ '+game.score+' &nbsp; 🔑 '+game.keys;
+  };
+  window.keydown=function(e){
+    game.pressed[e.key]=true;
+    if(e.key==='Escape'&&game.running)stopGame();
+    if(e.key.toLowerCase()==='r'&&game.running)restartGame();
+  };
+  window.keyup=function(e){delete game.pressed[e.key]};
+  window.addEventListener('keydown',keydown); window.addEventListener('keyup',keyup);
+  window.addObj=(function(original){
+    return function(type){
+      original(type);
+      if(type==='checkpoint'){
+        const o=scenes[sceneIndex].objects[scenes[sceneIndex].objects.length-1];
+        o.w=22;o.h=55;o.color='#54d68c';o.name='Checkpoint';
+        render();
+      }
+    }
+  })(window.addObj);
+})();
+</script>
+
+</body></html>
