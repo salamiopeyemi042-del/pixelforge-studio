@@ -38,7 +38,7 @@ section.ph-section{padding:65px 7%;border-top:1px solid #18243a}.ph-section h2{f
     <a onclick="phScroll('showcase')">Games</a>
     <a onclick="phScroll('learn')">Learn</a>
     <div class="ph-spacer"></div>
-    <button class="ph-btn" onclick="openStudio()">🚀 Open Studio</button>
+    <button class="ph-btn" onclick="openCommunity()">🌍 Community</button><button class="ph-btn" onclick="openStudio()">🚀 Open Studio</button>
   </div>
 
   <div class="hero">
@@ -48,7 +48,7 @@ section.ph-section{padding:65px 7%;border-top:1px solid #18243a}.ph-section h2{f
       <p>PIXELFORGE STUDIO is a browser-based game creator for building playable games without installing a huge game engine. Build levels, add characters, enemies, collectibles and exits, then export your game.</p>
       <div class="hero-actions">
         <button class="ph-btn" style="font-size:17px;padding:13px 20px" onclick="openStudio()">🎮 Start Creating</button>
-        <button class="ph-btn" style="background:#17243b" onclick="phScroll('showcase')">Explore Games</button>
+        <button class="ph-btn" style="background:#17243b" onclick="openCommunity()">🌍 Explore Community</button>
       </div>
     </div>
     <div class="hero-card">
@@ -263,6 +263,72 @@ function exportGame(){let data=JSON.stringify(p).replace(/</g,'\\u003c');let g=`
 })();
 </script>
 
+
+<style>
+.community{display:grid;grid-template-columns:1fr 320px;gap:18px;padding:20px 7%;background:#080d19;min-height:100vh}
+.community .box{background:#10192c;border:1px solid #293b5b;border-radius:14px;padding:20px}
+.community h2{margin-top:0}.community input,.community textarea,.community select{width:100%;margin:7px 0;padding:11px;border-radius:8px;border:1px solid #344664;background:#0b1324;color:white}
+.pubgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.pubcard{background:#151f35;border:1px solid #2e4163;border-radius:11px;padding:15px}.pubthumb{height:100px;border-radius:8px;background:linear-gradient(135deg,#24528a,#6b4ca8);display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:10px}
+.pill{display:inline-block;padding:5px 8px;border-radius:20px;background:#1a2c4b;color:#9fd9ff;font-size:11px;margin:2px}.profile{display:flex;gap:12px;align-items:center}.avatar{width:48px;height:48px;border-radius:50%;background:#315c9e;display:flex;align-items:center;justify-content:center;font-weight:800}.muted{color:#91a2c2;font-size:13px}.row{display:flex;gap:8px;flex-wrap:wrap}.primary{background:#2b66c7!important}.danger{background:#71334a!important}
+@media(max-width:900px){.community{grid-template-columns:1fr}.pubgrid{grid-template-columns:1fr}}
+</style>
+
+<div id="communityPanel" style="display:none;position:fixed;inset:0;z-index:1100;overflow:auto">
+<div class="community">
+<div>
+<div class="box">
+<div class="row" style="justify-content:space-between;align-items:center"><div><h2>🌍 PIXELFORGE COMMUNITY</h2><div class="muted">Create, publish and discover games.</div></div><button onclick="closeCommunity()">← Studio</button></div>
+<input id="communitySearch" placeholder="🔍 Search published games..." oninput="renderPublished()">
+<div class="row"><button onclick="setFilter('all')">All</button><button onclick="setFilter('platformer')">Platformer</button><button onclick="setFilter('arcade')">Arcade</button><button onclick="setFilter('adventure')">Adventure</button></div>
+<div id="publishedGrid" class="pubgrid" style="margin-top:15px"></div>
+</div>
+</div>
+<aside>
+<div class="box">
+<div class="profile"><div class="avatar">PF</div><div><b>Creator Profile</b><div class="muted">Local creator account</div></div></div>
+<hr style="border-color:#263653">
+<h3>📤 Publish a Game</h3>
+<input id="pubName" placeholder="Game name">
+<select id="pubCategory"><option>Platformer</option><option>Arcade</option><option>Adventure</option></select>
+<textarea id="pubDesc" rows="3" placeholder="Short description"></textarea>
+<button class="primary" onclick="publishCurrentGame()">🚀 Publish Current Project</button>
+<p class="muted">Published projects are stored in this browser for now. A cloud database will be added in the online multiplayer/community upgrade.</p>
+</div>
+<div class="box" style="margin-top:18px">
+<h3>📈 Creator Stats</h3><div id="creatorStats" class="muted"></div>
+</div>
+</aside>
+</div>
+</div>
+
+<script>
+let communityFilter='all';
+function openCommunity(){document.getElementById('publicHome').style.display='none';document.getElementById('communityPanel').style.display='block';renderPublished();}
+function closeCommunity(){document.getElementById('communityPanel').style.display='none';document.getElementById('publicHome').style.display='block';}
+function setFilter(f){communityFilter=f;renderPublished();}
+function getPublished(){try{return JSON.parse(localStorage.getItem('pixelforge_published')||'[]')}catch(e){return[]}}
+function savePublished(a){localStorage.setItem('pixelforge_published',JSON.stringify(a))}
+function publishCurrentGame(){
+ const name=document.getElementById('pubName').value.trim()||'My PIXELFORGE Game';
+ const category=document.getElementById('pubCategory').value;
+ const desc=document.getElementById('pubDesc').value.trim()||'A game created with PIXELFORGE STUDIO.';
+ const a=getPublished();
+ a.unshift({id:Date.now(),name,category,desc,plays:0,likes:0,project:scenes});
+ savePublished(a);document.getElementById('pubName').value='';document.getElementById('pubDesc').value='';
+ renderPublished();alert('Game published to your local community library!');
+}
+function renderPublished(){
+ const q=(document.getElementById('communitySearch')?.value||'').toLowerCase();
+ const grid=document.getElementById('publishedGrid'); if(!grid)return;
+ let a=getPublished().filter(g=>(communityFilter==='all'||g.category.toLowerCase()===communityFilter)&&((g.name+' '+g.desc).toLowerCase().includes(q)));
+ if(!a.length){grid.innerHTML='<div class="muted" style="grid-column:1/-1;padding:30px;text-align:center">No games found yet. Publish your first game!</div>'}
+ else grid.innerHTML=a.map(g=>`<div class="pubcard"><div class="pubthumb">🎮</div><b>${esc(g.name)}</b><div><span class="pill">${esc(g.category)}</span><span class="pill">⭐ ${g.likes}</span><span class="pill">▶ ${g.plays}</span></div><p class="muted">${esc(g.desc)}</p><div class="row"><button class="primary" onclick="playPublished(${g.id})">▶ Play</button><button onclick="likePublished(${g.id})">❤️ Like</button></div></div>`).join('');
+ const all=getPublished(); document.getElementById('creatorStats').innerHTML='Published: <b>'+all.length+'</b><br>Likes: <b>'+all.reduce((n,g)=>n+g.likes,0)+'</b><br>Plays: <b>'+all.reduce((n,g)=>n+g.plays,0)+'</b>';
+}
+function likePublished(id){let a=getPublished(),g=a.find(x=>x.id===id);if(g){g.likes++;savePublished(a);renderPublished()}}
+function playPublished(id){let a=getPublished(),g=a.find(x=>x.id===id);if(!g)return;g.plays++;savePublished(a);scenes=g.project;sceneIndex=0;selected=null;render();closeCommunity();playGame();}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+</script>
 </body></html>`;download((p.name||'pixelforge-game').replace(/[^a-z0-9]+/gi,'-')+'.html',g,'text/html');pop('Game exported')}
 function openSettings(){show(`<h2>Game Settings</h2><div class="row"><label>Name</label><input id="mn" value="${p.name}"></div><div class="row"><label>Gravity</label><input id="mg" type="number" value="${p.gravity}"></div><div class="row"><label>Speed</label><input id="ms" type="number" value="${p.speed}"></div><div class="row"><label>Jump</label><input id="mj" type="number" value="${p.jump}"></div><button onclick="applySettings()">Save Settings</button> <button onclick="closeModal()">Cancel</button>`)}
 function applySettings(){p.name=$('mn').value;p.gravity=+$('mg').value||20;p.speed=+$('ms').value||7;p.jump=+$('mj').value||10;closeModal();render();pop('Settings saved')}
