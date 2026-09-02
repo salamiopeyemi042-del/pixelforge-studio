@@ -11,6 +11,94 @@ button,input,select{font:inherit}button{border:1px solid #293752;background:#101
 </style>
 </head>
 <body>
+<style>
+#publicHome{position:fixed;inset:0;z-index:1000;background:#080d19;color:#eef5ff;overflow:auto;font-family:Arial,sans-serif}
+.ph-nav{height:64px;display:flex;align-items:center;padding:0 6%;border-bottom:1px solid #24314d;background:#0d1425;gap:20px;position:sticky;top:0;z-index:3}
+.ph-logo{font-size:21px;font-weight:900;color:#7dd3fc}.ph-nav a{color:#b8c7e5;text-decoration:none;cursor:pointer}.ph-spacer{flex:1}
+.ph-btn{background:#2b5db5;color:white;padding:10px 16px;border-radius:9px;border:0;font-weight:700;cursor:pointer}
+.hero{min-height:540px;padding:80px 7%;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;background:radial-gradient(circle at 80% 20%,#1d3d70 0,#080d19 55%)}
+.hero h1{font-size:clamp(44px,7vw,82px);line-height:.95;margin:0 0 20px}.hero h1 span{color:#7dd3fc}
+.hero p{font-size:19px;line-height:1.6;color:#aebbd4;max-width:650px}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:25px}
+.hero-card{background:#111b30;border:1px solid #344766;border-radius:18px;padding:24px;box-shadow:0 20px 60px #0008}
+.fake-editor{height:290px;border-radius:12px;background:#17213a;border:1px solid #52658c;padding:15px;position:relative;overflow:hidden}
+.fake-bar{height:24px;background:#243453;border-radius:5px;margin-bottom:15px}.fake-grid{height:220px;background-image:linear-gradient(#2b3a5a 1px,transparent 1px),linear-gradient(90deg,#2b3a5a 1px,transparent 1px);background-size:28px 28px;position:relative}
+.fake-player{position:absolute;width:32px;height:48px;background:#36a3ff;border-radius:7px;left:35%;top:55%}.fake-platform{position:absolute;width:180px;height:20px;background:#667899;left:20%;top:75%}
+section.ph-section{padding:65px 7%;border-top:1px solid #18243a}.ph-section h2{font-size:35px;margin:0 0 12px}.ph-section>p{color:#9fafcb;max-width:700px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}.card2{background:#10192c;border:1px solid #293a59;border-radius:14px;padding:22px}.card2 b{font-size:18px}.card2 p{color:#9fafcb;line-height:1.5}
+.search{width:100%;max-width:520px;padding:13px 15px;background:#0c1323;border:1px solid #344664;border-radius:9px;color:white;margin:18px 0}
+.game-show{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.game-card{background:#111b30;border:1px solid #2d3e5e;border-radius:13px;padding:18px}.game-thumb{height:120px;border-radius:9px;background:linear-gradient(135deg,#244c83,#151c31);display:flex;align-items:center;justify-content:center;font-size:42px;margin-bottom:12px}.game-card small{color:#899bbd}
+.ph-footer{padding:35px 7%;border-top:1px solid #24314d;color:#7f90ae;display:flex;justify-content:space-between;gap:20px}
+@media(max-width:850px){.hero{grid-template-columns:1fr;padding-top:55px}.cards,.game-show{grid-template-columns:1fr}.ph-nav a{display:none}}
+</style>
+
+<div id="publicHome">
+  <div class="ph-nav">
+    <div class="ph-logo">⚡ PIXELFORGE</div>
+    <a onclick="phScroll('features')">Features</a>
+    <a onclick="phScroll('showcase')">Games</a>
+    <a onclick="phScroll('learn')">Learn</a>
+    <div class="ph-spacer"></div>
+    <button class="ph-btn" onclick="openStudio()">🚀 Open Studio</button>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div style="color:#7ef2bd;font-weight:800;margin-bottom:12px">FREE BROWSER GAME CREATOR</div>
+      <h1>Make games.<br><span>Share them.</span><br>Play anywhere.</h1>
+      <p>PIXELFORGE STUDIO is a browser-based game creator for building playable games without installing a huge game engine. Build levels, add characters, enemies, collectibles and exits, then export your game.</p>
+      <div class="hero-actions">
+        <button class="ph-btn" style="font-size:17px;padding:13px 20px" onclick="openStudio()">🎮 Start Creating</button>
+        <button class="ph-btn" style="background:#17243b" onclick="phScroll('showcase')">Explore Games</button>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="fake-editor"><div class="fake-bar"></div><div class="fake-grid"><div class="fake-player"></div><div class="fake-platform"></div></div></div>
+      <p style="margin-bottom:0;color:#9fb1d1">A simple editor → a playable game → a shareable project.</p>
+    </div>
+  </div>
+
+  <section class="ph-section" id="features">
+    <h2>Everything you need to start</h2><p>PIXELFORGE is designed to make game creation easier while giving you real game systems to experiment with.</p>
+    <div class="cards">
+      <div class="card2"><b>🎨 Build Levels</b><p>Add players, platforms, walls, enemies, coins, gems, keys and doors.</p></div>
+      <div class="card2"><b>⚙️ Game Systems</b><p>Playtest with movement, jumping, collisions, health, score, collectibles and win/lose states.</p></div>
+      <div class="card2"><b>📦 Export</b><p>Export a standalone HTML game that can be opened in a browser.</p></div>
+    </div>
+  </section>
+
+  <section class="ph-section" id="showcase">
+    <h2>Game Showcase</h2><p>Here is the showcase area for games you publish with PIXELFORGE.</p>
+    <input class="search" id="gameSearch" placeholder="🔍 Search games..." oninput="filterGames()">
+    <div class="game-show" id="gameList">
+      <div class="game-card" data-name="Pixel Adventure"><div class="game-thumb">🧙</div><b>Pixel Adventure</b><br><small>Platformer • Demo</small></div>
+      <div class="game-card" data-name="Space Runner"><div class="game-thumb">🚀</div><b>Space Runner</b><br><small>Arcade • Demo</small></div>
+      <div class="game-card" data-name="Gem Quest"><div class="game-thumb">💎</div><b>Gem Quest</b><br><small>Adventure • Demo</small></div>
+    </div>
+  </section>
+
+  <section class="ph-section" id="learn">
+    <h2>Learn PIXELFORGE</h2>
+    <div class="cards">
+      <div class="card2"><b>1. Create</b><p>Open Studio and add objects to your scene.</p></div>
+      <div class="card2"><b>2. Playtest</b><p>Press Play and test movement, jumping and your level.</p></div>
+      <div class="card2"><b>3. Export & Share</b><p>Export your game and share the resulting HTML file or host it online.</p></div>
+    </div>
+  </section>
+
+  <section class="ph-section">
+    <h2>Ready to build?</h2><p>PIXELFORGE is already running in your browser. Start with a small level and keep improving it.</p>
+    <button class="ph-btn" onclick="openStudio()">🚀 Open PIXELFORGE STUDIO</button>
+  </section>
+
+  <div class="ph-footer"><span>© 2026 PIXELFORGE STUDIO</span><span>Built for creators • Browser based • Free to start</span></div>
+</div>
+
+<script>
+function openStudio(){document.getElementById('publicHome').style.display='none';}
+function phScroll(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
+function filterGames(){const q=document.getElementById('gameSearch').value.toLowerCase();document.querySelectorAll('#gameList .game-card').forEach(c=>c.style.display=c.dataset.name.toLowerCase().includes(q)?'block':'none');}
+</script>
+
 <header class="top">
 <div class="brand">PIXELFORGE <b>STUDIO PRO</b></div>
 <button onclick="newProject()">New</button><button onclick="saveProject()">Save</button><button onclick="loadProject()">Load</button>
