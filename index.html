@@ -119,13 +119,21 @@ section.ph-section{padding:65px 7%;border-top:1px solid #18243a}.ph-section h2{f
 
 <script>
 function openStudio(){document.getElementById('publicHome').style.display='none';}
+  function openOnline(){
+  document.getElementById('publicHome').style.display='none';
+  document.getElementById('onlinePanel').style.display='block';
+}
+function closeOnline(){
+  document.getElementById('onlinePanel').style.display='none';
+  document.getElementById('publicHome').style.display='none';
+}
 function phScroll(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
 function filterGames(){const q=document.getElementById('gameSearch').value.toLowerCase();document.querySelectorAll('#gameList .game-card').forEach(c=>c.style.display=c.dataset.name.toLowerCase().includes(q)?'block':'none');}
 </script>
 
 <header class="top">
 <div class="brand">PIXELFORGE <b>STUDIO PRO</b></div>
-<button onclick="newProject()">New</button><button onclick="saveProject()">Save</button><button onclick="loadProject()">Load</button>
+<button onclick="newProject()">New</button><button onclick="openOnline()">☁️ Online</button><button onclick="saveProject()">Save</button><button onclick="loadProject()">Load</button>
 <button onclick="exportProject()">Project JSON</button><button onclick="exportGame()">Export Game</button><button onclick="togglePlay()">▶ Play</button>
 <div class="grow"></div><span class="pill" id="mode">EDITOR</span>
 </header>
