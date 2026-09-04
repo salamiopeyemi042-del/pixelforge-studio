@@ -93,6 +93,30 @@ section.ph-section{padding:65px 7%;border-top:1px solid #18243a}.ph-section h2{f
   <div class="ph-footer"><span>© 2026 PIXELFORGE STUDIO</span><span>Built for creators • Browser based • Free to start</span></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<div id="onlinePanel" style="display:none;position:fixed;inset:0;z-index:1200;overflow:auto;background:#08111f;color:#eef5ff;font-family:Arial,sans-serif">
+<div style="max-width:980px;margin:30px auto;padding:20px"><div class="box" style="padding:22px">
+<div class="row" style="justify-content:space-between;align-items:center">
+<div><h2>☁️ PIXELFORGE ONLINE</h2><div class="muted">Sign in, publish games to the cloud, and discover games from other creators.</div></div>
+<button onclick="closeOnline()">← Studio</button></div>
+<div id="onlineSetup" style="margin-top:18px"><h3>1. Connect Supabase</h3>
+<input id="sbUrl" placeholder="Project URL (https://....supabase.co)" style="width:100%;box-sizing:border-box">
+<input id="sbKey" placeholder="Publishable key" style="width:100%;box-sizing:border-box;margin-top:8px">
+<div class="row" style="margin-top:8px"><button class="primary" onclick="connectCloud()">Connect</button><button onclick="disconnectCloud()">Clear saved connection</button></div>
+<p class="muted">Use only your Project URL and Publishable key here. Never put a Supabase secret/service-role key in this website.</p></div>
+<div id="onlineAuth" style="display:none;margin-top:18px"><h3>2. Creator account</h3>
+<input id="authEmail" type="email" placeholder="Email"><input id="authPassword" type="password" placeholder="Password" style="margin-top:8px">
+<div class="row" style="margin-top:8px"><button class="primary" onclick="signUpPF()">Create account</button><button onclick="signInPF()">Sign in</button><button onclick="signOutPF()">Sign out</button></div>
+<div id="authStatus" class="muted" style="margin-top:8px"></div></div>
+<div id="onlinePublish" style="display:none;margin-top:18px"><h3>3. Publish your game</h3>
+<input id="onlineName" placeholder="Game name"><select id="onlineCategory" style="margin-top:8px"><option>Platformer</option><option>Arcade</option><option>Adventure</option></select>
+<textarea id="onlineDesc" rows="3" placeholder="Short description" style="margin-top:8px"></textarea>
+<button class="primary" onclick="publishOnlineGame()" style="margin-top:8px">🚀 Publish Current Project</button><div id="publishStatus" class="muted" style="margin-top:8px"></div></div>
+<div style="margin-top:24px"><div class="row" style="justify-content:space-between;align-items:center"><h3>🌍 Public Game Library</h3><button onclick="loadOnlineGames()">Refresh</button></div>
+<input id="onlineSearch" placeholder="🔍 Search cloud games..." oninput="renderOnlineGames()"><div id="onlineGames" class="pubgrid" style="margin-top:14px"></div></div>
+</div></div></div>
+
 <script>
 function openStudio(){document.getElementById('publicHome').style.display='none';}
 function phScroll(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
